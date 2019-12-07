@@ -93,7 +93,7 @@ lazy val time = project
   .settings(
     name := "saddle-time",
     libraryDependencies ++= Seq(
-      "joda-time" % "joda-time" % "2.1",
+      "joda-time" % "joda-time" % "2.10.5",
       "org.joda" % "joda-convert" % "1.2",
       "org.scala-saddle" % "google-rfc-2445" % "20110304",
       "org.specs2" %% "specs2-core" % "4.6.0" % "test",
