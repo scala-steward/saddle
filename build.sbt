@@ -125,7 +125,7 @@ lazy val coreJVMTests = project
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % "2.6.0",
+      "org.typelevel" %% "cats-core" % "2.6.1",
       "org.specs2" %% "specs2-core" % "4.12.0" % "test",
       "org.specs2" %% "specs2-scalacheck" % "4.12.0" % "test",
       "org.scalatest" %% "scalatest" % scalaTestVersion % "test"
