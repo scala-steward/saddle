@@ -1,14 +1,16 @@
 import com.typesafe.tools.mima.core._
 
-lazy val scalaTestVersion = "3.2.10"
-lazy val scalaVersionInBuild = "2.13.8"
+lazy val scalaTestVersion = "3.2.11"
+lazy val scalaVersionInBuild = "2.13.6"
 
 ThisBuild / versionScheme := Some("early-semver")
 
 ThisBuild / libraryDependencySchemes ++= Seq(
-  "io.circe" %% "circe-core" % "always",
-  "io.circe" %% "circe-numbers" % "always",
-  "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-core" % "early-semver"
+  "io.circe" % "circe-core" % "always",
+  "io.circe" % "circe-numbers" % "always",
+  "org.typelevel" % "cats-core" % "early-semver",
+  "org.typelevel" % "cats-kernel" % "early-semver",
+  "com.github.plokhotnyuk.jsoniter-scala" % "jsoniter-scala-core" % "early-semver"
 )
 
 ThisBuild / versionPolicyIntention := Compatibility.BinaryAndSourceCompatible
@@ -126,8 +128,8 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %%% "scala-collection-compat" % "2.5.0",
       "org.typelevel" %%% "cats-core" % "2.6.1",
-      "org.specs2" %%% "specs2-core" % "4.13.1" % "test",
-      "org.specs2" %%% "specs2-scalacheck" % "4.13.1" % "test"
+      "org.specs2" %%% "specs2-core" % "4.13.2" % "test",
+      "org.specs2" %%% "specs2-scalacheck" % "4.13.2" % "test"
     )
   )
   .dependsOn(spire, io)
