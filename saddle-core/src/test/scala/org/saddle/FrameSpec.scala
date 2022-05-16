@@ -30,6 +30,90 @@ class FrameSpec extends Specification {
     3 -> Series(1 -> "1,3", 2 -> "2,3", 4 -> null, 5 -> "5,3"),
     5 -> Series(1 -> "1,5", 2 -> "2,5", 4 -> "4,5", 5 -> "5,5")
   )
+
+  "Frame.apply performs a cross product if row indices are not unique" in {
+    val fr = Frame(
+      Series(0 -> 1, 2 -> 2, 1 -> 3, 0 -> 4),
+      Series(1 -> 1, 2 -> 2, 0 -> 3, 0 -> 4),
+      Series(0 -> 1, 1 -> 2, 2 -> 3, 0 -> 4)
+    )
+
+    fr.row(0).numRows must_== 8
+  }
+
+  "Frame.fromCols performs no cross product in case of duplicates" in {
+
+    Frame
+      .fromCols(
+        Series(0 -> 1, 2 -> 2, 1 -> 3, 0 -> 4),
+        Series(1 -> 1, 2 -> 2, 0 -> 3, 0 -> 4),
+        Series(0 -> 1, 1 -> 2, 2 -> 3, 0 -> 4)
+      )
+      .row(0)
+      .numRows must_== 2
+
+  }
+  "Frame.fromCols performs no cross product in case of duplicates - 2" in {
+    Frame
+      .fromCols(
+        List(
+          Series(0 -> 1, 2 -> 2, 1 -> 3, 0 -> 4),
+          Series(1 -> 1, 2 -> 2, 0 -> 3, 0 -> 4),
+          Series(0 -> 1, 1 -> 2, 2 -> 3, 0 -> 4)
+        ),
+        Index(0, 1, 2)
+      )
+      .row(0)
+      .numRows must_== 2
+
+  }
+  "Frame.fromCols performs no cross product in case of duplicates - 3" in {
+    Frame
+      .fromCols(
+        0 -> Series(0 -> 1, 2 -> 2, 1 -> 3, 0 -> 4),
+        1 -> Series(1 -> 1, 2 -> 2, 0 -> 3, 0 -> 4),
+        2 -> Series(0 -> 1, 1 -> 2, 2 -> 3, 0 -> 4)
+      )
+      .row(0)
+      .numRows must_== 2
+
+  }
+  "Frame.fromCols performs no cross product if indices are unique" in {
+    Frame
+      .fromCols(
+        Series(0 -> 1, 2 -> 2, 1 -> 3),
+        Series(1 -> 1, 2 -> 2, 0 -> 3),
+        Series(0 -> 1, 1 -> 2, 2 -> 3)
+      )
+      .row(0)
+      .numRows must_== 1
+
+  }
+
+  "setColIndex and setRowIndex on empty frame should return an empty frame" in {
+    val f1 = Frame.empty[Int, Int, Int]
+    val f2 = f1.setColIndex(Index(0, 1, 2, 3))
+    val f3 = f1.setRowIndex(Index(0, 1, 2, 3))
+    (f1 must_== f2) and
+      (f1 must_== f3)
+  }
+  "setColIndex on frame with empty rows should not throw" in {
+    val f1 = Frame(Vec.empty[Int]).T
+    val f2 = f1.setColIndex(Index(0, 1, 2, 3))
+    (f1 must_== f2)
+  }
+  "setColIndex on frame with empty cols should throw" in {
+    val f1 = Frame(Vec.empty[Int])
+    scala.util.Try {
+      (f1.setColIndex(Index(0, 1, 2, 3)))
+    }.isFailure must_== true
+  }
+  "setRowIndex on empty frame with empty cols should not throw" in {
+    val f1 = Frame(Vec.empty[Int])
+    val f2 = f1.setRowIndex(Index(0, 1, 2, 3))
+    (f1 must_== f2)
+  }
+
   "join" in {
     val f2 = Frame(
       0 -> Series(
@@ -237,6 +321,55 @@ class FrameSpec extends Specification {
     val b = Vec(true, false, false, false)
     testFrame.T.rmask(b).T must_== testFrame.mask(b)
   }
+
+  "fillNA" should {
+    val testFrame =
+      Frame(
+        Vec[Int](1, 2, na),
+        Vec[Int](na, 2, 3),
+        Vec[Int](na, na, na),
+        Vec[Int](1, na, na)
+      )
+    "fill NAs with an arbitrary value" in {
+      testFrame
+        .fillNA(4)
+        .must_==(
+          Frame(
+            Vec[Int](1, 2, 4),
+            Vec[Int](4, 2, 3),
+            Vec[Int](4, 4, 4),
+            Vec[Int](1, 4, 4)
+          )
+        )
+
+    }
+    "fill NAs forward" in {
+      testFrame
+        .fillNA(FillForward)
+        .must_==(
+          Frame(
+            Vec[Int](1, 2, 2),
+            Vec[Int](na, 2, 3),
+            Vec[Int](na, na, na),
+            Vec[Int](1, 1, 1)
+          )
+        )
+    }
+
+    "fill NAs backward" in {
+      testFrame
+        .fillNA(FillBackward)
+        .must_==(
+          Frame(
+            Vec[Int](1, 2, na),
+            Vec[Int](2, 2, 3),
+            Vec[Int](na, na, na),
+            Vec[Int](1, na, na)
+          )
+        )
+    }
+  }
+
   "joinMap" in {
     val testframe2 = Frame(
       1 -> Series(1 -> "1,1", 2 -> "2,1", 3 -> "3,1", 4 -> "4,1"),

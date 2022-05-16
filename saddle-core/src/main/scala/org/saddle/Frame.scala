@@ -575,8 +575,12 @@ class Frame[RX: ST: ORD, CX: ST: ORD, @spec(Int, Long, Double) T](
     * @tparam Y
     *   Type of elements of new Index
     */
-  def setRowIndex[Y: ST: ORD](newIx: Index[Y]): Frame[Y, CX, T] =
-    new Frame(values, newIx, colIx, cachedMat)
+  def setRowIndex[Y: ST: ORD](newIx: Index[Y]): Frame[Y, CX, T] = {
+    val maybeEmptyIx =
+      if (numRows == 0) Index.empty[Y]
+      else newIx
+    new Frame(values, maybeEmptyIx, colIx, cachedMat)
+  }
 
   /** Create a new Frame using the current values but with the new row index
     * specified by the column at a particular offset, and with that column
@@ -642,8 +646,12 @@ class Frame[RX: ST: ORD, CX: ST: ORD, @spec(Int, Long, Double) T](
     * @tparam Y
     *   Type of elements of new Index
     */
-  def setColIndex[Y: ST: ORD](newIx: Index[Y]): Frame[RX, Y, T] =
-    new Frame(values, rowIx, newIx, cachedMat)
+  def setColIndex[Y: ST: ORD](newIx: Index[Y]): Frame[RX, Y, T] = {
+    val maybeEmptyIx =
+      if (numCols == 0) Index.empty[Y]
+      else newIx
+    new Frame(values, rowIx, maybeEmptyIx, cachedMat)
+  }
 
   /** Create a new Frame using the current values but with the new col index
     * specified by the row at a particular offset, and with that row removed
@@ -915,6 +923,17 @@ class Frame[RX: ST: ORD, CX: ST: ORD, @spec(Int, Long, Double) T](
     */
   def mask(m: Vec[Boolean]): Frame[RX, CX, T] =
     Frame(values.map(v => v.mask(m)), rowIx, colIx)
+
+  /** Fill NAs with a defined value.
+    */
+  def fillNA(v: T): Frame[RX, CX, T] = mapCols((_, c) => c.fillNA(_ => v))
+
+  /** Fill NA values by propagating defined values column-wise.
+    *
+    * @param limit
+    *   If > 0, propagate over a maximum of `limit` consecutive NA values.
+    */
+  def fillNA(fillMethod: FillMethod, limit: Int = 0) = mapCols((_, c) => c.fillNA(fillMethod, limit))
 
   /** Joins two frames along both their indexes and applies a function to each
     * pair of values; when either value is NA, the result of the function is
@@ -1687,10 +1706,10 @@ class Frame[RX: ST: ORD, CX: ST: ORD, @spec(Int, Long, Double) T](
                 .getOrElse(false)
             ) {
               prevColMask = prevColMask.updated(c, true)
-              currLab.formatted(fmt)
+              fmt.format(currLab)
             } else {
               prevColMask = prevColMask.updated(c, false)
-              "".formatted(fmt)
+              fmt.format("")
             }
           prevColLabel = currLab
           res
@@ -1734,8 +1753,8 @@ class Frame[RX: ST: ORD, CX: ST: ORD, @spec(Int, Long, Double) T](
           val fmt = "%" + l + "s"
           val res = if (i == vls.length - 1 || prevRowLabels(i) != v) {
             resetRowLabels(i + 1)
-            v.formatted(fmt)
-          } else "".formatted(fmt)
+            fmt.format(v)
+          } else fmt.format("")
           prevRowLabels(i) = v
           res
         }
@@ -1923,6 +1942,11 @@ object Frame extends BinOpFrame {
 
   /** Factory method to create a Frame from a sequence of Series. The row labels
     * of the result are the outer join of the indexes of the series provided.
+    *
+    * This method repeatedly joins the rows indices. 
+    * Mind the combinatorial semantics of joins, 
+    * if the indices contain duplicates, the resulting Frame can grow quickly.
+    * An alternative is Frame.fromCols.
     */
   @scala.annotation.nowarn
   def apply[RX: ST: ORD, T: ST: ID](
@@ -1945,30 +1969,81 @@ object Frame extends BinOpFrame {
     }
   }
 
+  /** Factory method to create a Frame from a sequence of Series. The row labels
+    * of the result are the outer join of the indexes of the series provided.
+    *
+    * Row indices are disambiguated before the join via the Index.makeUnique
+    * method which turns each row index into a unique index resolving ties.
+    *
+    * This methods avoids a combinatorial increase in the resulting row count in
+    * case of duplicate elements in the row indices, however the join of rows
+    * with the same index is arbitrary. Alternatively see Frame.apply .
+    */
+  @scala.annotation.nowarn
+  def fromCols[RX: ST: ORD, T: ST](
+      values: Series[RX, T]*
+  ): Frame[RX, Int, T] = {
+    if (values.forall(_.index.isUnique)) Frame(values: _*)
+    else
+      Frame(
+        values.map(series => series.setIndex(series.index.toUniqueIndex)): _*
+      ).mapRowIndex(_._1)
+  }
+
   /** Factory method to create a Frame from a sequence of series, also
     * specifying the column index to use. The row labels of the result are the
     * outer join of the indexes of the series provided.
+    *
+    * This method repeatedly joins the rows indices. 
+    * Mind the combinatorial semantics of joins, 
+    * if the indices contain duplicates, the resulting Frame can grow quickly.
+    * An alternative is Frame.fromCols.
     */
   def apply[RX: ST: ORD, CX: ST: ORD, T: ST](
       values: Seq[Series[RX, T]],
       colIx: Index[CX]
   ): Frame[RX, CX, T] = {
-    val asIdxSeq = values.toIndexedSeq
-    asIdxSeq.length match {
-      case 0 => empty[RX, CX, T]
-      case 1 => Frame(asIdxSeq.map(_.values), asIdxSeq(0).index, colIx)
-      case _ => {
-        val init = Frame(Seq(asIdxSeq(0).values), asIdxSeq(0).index, Index(0))
-        val temp = values.tail.foldLeft(init)(_.addCol(_, OuterJoin))
-        Frame(temp.values, temp.rowIx, colIx)
-      }
-    }
+    require(
+      values.size == colIx.length,
+      s"colIx length (${colIx.length}) != number of columns (${values.size})"
+    )
+    Frame(values: _*).setColIndex(colIx)
+  }
+
+  /** Factory method to create a Frame from a sequence of series, also
+    * specifying the column index to use. The row labels of the result are the
+    * outer join of the indexes of the series provided.
+    *
+    * Row indices are disambiguated before the join via the Index.makeUnique
+    * method which turns each row index into a unique index resolving ties.
+    *
+    * This methods avoids a combinatorial increase in the resulting row count in
+    * case of duplicate elements in the row indices, however the join of rows
+    * with the same index is arbitrary. Alternatively see Frame.apply .
+    */
+  def fromCols[RX: ST: ORD, CX: ST: ORD, T: ST](
+      values: Seq[Series[RX, T]],
+      colIx: Index[CX]
+  ): Frame[RX, CX, T] = {
+    val allUnique = values.forall(_.index.isUnique)
+    if (allUnique) Frame(values, colIx)
+    else
+      Frame(
+        values.map(series => series.setIndex(series.index.toUniqueIndex)),
+        colIx
+      ).mapRowIndex(_._1)
+
   }
 
   /** Factory method to create a Frame from a sequence of tuples, where the
     * first element of the tuple is a column label, and the second a series of
     * values. The row labels of the result are the outer join of the indexes of
     * the series provided.
+    *
+    * This method repeatedly joins the rows indices. 
+    * Mind the combinatorial semantics of joins, 
+    * if the indices contain duplicates, the resulting Frame can grow quickly.
+    * An alternative is Frame.fromCols.
     */
   def apply[RX: ST: ORD, CX: ST: ORD, T: ST](
       values: (CX, Series[RX, T])*
@@ -1985,6 +2060,28 @@ object Frame extends BinOpFrame {
         Frame(temp.values, temp.rowIx, idx)
       }
     }
+  }
+
+  /** Factory method to create a Frame from a sequence of tuples, where the
+    * first element of the tuple is a column label, and the second a series of
+    * values. The row labels of the result are the outer join of the indexes of
+    * the series provided.
+    *
+    * Row indices are disambiguated before the join via the Index.makeUnique
+    * method which turns each row index into a unique index resolving ties.
+    *
+    * This methods avoids a combinatorial increase in the resulting row count in
+    * case of duplicate elements in the row indices, however the join of rows
+    * with the same index is arbitrary. Alternatively see Frame.apply .
+    */
+  def fromCols[RX: ST: ORD, CX: ST: ORD, T: ST](
+      values: (CX, Series[RX, T])*
+  ): Frame[RX, CX, T] = {
+    if (values.forall(_._2.index.isUnique)) Frame(values: _*)
+    else
+      Frame(values.map { case (cx, series) =>
+        (cx, series.setIndex(series.index.toUniqueIndex))
+      }: _*).mapRowIndex(_._1)
   }
 
   // --------------------------------

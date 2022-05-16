@@ -22,6 +22,9 @@ import org.saddle.index.Slice
 import org.saddle.index.IndexIntRange
 import java.io.OutputStream
 import org.saddle.order._
+import org.saddle.FillMethod
+import org.saddle.FillForward
+import org.saddle.FillBackward
 
 class VecDefault[@spec(Boolean, Int, Long, Double) T](
     values: Array[T],
@@ -526,6 +529,12 @@ class VecDefault[@spec(Boolean, Int, Long, Double) T](
     *   A function from Int => A; yields value for NA value at ith position
     */
   def fillNA(f: Int => T): Vec[T] = VecImpl.vecfillNA(this)(f)(scalarTag)
+
+  def fillNA(method: FillMethod, limit: Int=0): Vec[T] = VecImpl.fillNA(this, method, limit)(scalarTag)
+
+  def fillForward(limit: Int): Vec[T] = VecImpl.fillNA(this, FillForward, limit)
+
+  def fillBackward(limit: Int): Vec[T] = VecImpl.fillNA(this, FillBackward, limit)
 
   /** Converts Vec to an indexed sequence (default implementation is
     * immutable.Vector)

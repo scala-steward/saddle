@@ -17,6 +17,9 @@ package org.saddle.vec
 import scala.{specialized => spec}
 import org.saddle.{ST, Vec}
 import org.saddle.Buffer
+import org.saddle.FillMethod
+import org.saddle.FillForward
+import org.saddle.FillBackward
 
 // Specialized method implementations for code reuse in implementations of Vec; NA-safe
 private[saddle] object VecImpl {
@@ -427,6 +430,53 @@ private[saddle] object VecImpl {
     while (i < l) {
       if (s.isMissing(buf(i))) buf(i) = f(idx.raw(i))
       i += 1
+    }
+    Vec(buf)
+  }
+
+  def fillNA[@spec(Boolean, Int, Long, Double) A: ST](
+      vec: Vec[A],
+      method: FillMethod,
+      limit: Int
+  ): Vec[A] = {
+    val step = method match {
+      case FillForward  => 1
+      case FillBackward => -1
+    }
+    val buf = vec.contents
+    val l = vec.length
+    val end = method match {
+      case FillForward  => l
+      case FillBackward => -1
+    }
+    var i = method match {
+      case FillForward  => 0
+      case FillBackward => l - 1
+    }
+    val s = implicitly[ST[A]]
+
+    while (i != end) {
+      while (i != end && s.isMissing(buf(i))) {
+        i += step
+      }
+      if (i != end) {
+        var lastNotMissing = buf(i)
+        i += step
+        while (i != end && s.notMissing(buf(i))) {
+          lastNotMissing = buf(i)
+          i += step
+        }
+        var remaining = limit
+        while (
+          i != end
+          && (limit == 0 || remaining > 0)
+          && s.isMissing(buf(i))
+        ) {
+          buf(i) = lastNotMissing
+          remaining -= 1
+          i += step
+        }
+      }
     }
     Vec(buf)
   }

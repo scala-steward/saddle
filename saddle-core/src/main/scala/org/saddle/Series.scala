@@ -24,6 +24,7 @@ import java.io.OutputStream
 import org.saddle.mat.MatCols
 import org.saddle.locator.Locator
 import org.saddle.order._
+import org.saddle.index.OuterJoin
 
 /** `Series` is an immutable container for 1D homogeneous data which is indexed
   * by a an associated sequence of keys.
@@ -247,12 +248,45 @@ class Series[X: ST: ORD, @spec(Int, Long, Double) T: ST](
     ixer.map(a => Series(values.take(a), newIx)) getOrElse this
   }
 
-  /** Create a new Series whose index formed of the provided argument, and whose
-    * values are derived from the original Series.
+  /** Create a new Series whose index is formed of the provided argument, and
+    * whose values are derived from the original Series.
     * @param keys
     *   Sequence of keys to be the index of the result series
     */
   def reindex(keys: X*): Series[X, T] = reindex(Index(keys.toArray))
+
+  /** Create a new Series whose index is `newIx` and whose values are derived
+    * from the original Series. For keys in `newIx` not contained in this
+    * series's index, the associated values are derived based on the filling
+    * method `fillMethod` against this series. 
+    * This series must be monotonic, othrwise IllegalArgumentException is thrown.
+    * @param keys
+    *   Sequence of keys to be the index of the result series
+    * @param fillMethod
+    *   Filling method to derive unfound keys of `newId` in this series.
+    *   `FillForward` or `FillBackward`.
+    * @param limit
+    *   Limit for the filling method. Not applicable if <= 0.
+    */
+  def reindex(
+      newIx: Index[X],
+      fillMethod: FillMethod,
+      limit: Int = 0
+  ): Series[X, T] = {
+    if (!this.index.isMonotonic) {
+      throw new IllegalArgumentException("this series is not monotonic")
+    }
+    val ixer = this.index.join(newIx.sorted, OuterJoin)
+    val joinedSer = Series(
+      ixer.lTake.map(this.values.take).getOrElse(this.values),
+      ixer.index
+    )
+    val serFilled = fillMethod match {
+      case FillForward  => joinedSer.fillForward(limit)
+      case FillBackward => joinedSer.fillBackward(limit)
+    }
+    serFilled.apply(newIx.toVec)
+  }
 
   // make new index
 
@@ -385,14 +419,38 @@ class Series[X: ST: ORD, @spec(Int, Long, Double) T: ST](
     */
   def shift(n: Int = 1): Series[X, T] = Series(values.shift(n), index)
 
-  /** Fills NA values in series with result of a function which acts on the
-    * index of the particular NA value found
+  /** Fill NA values in series with result of a function which acts on the
+    * index of the particular NA value found.
     *
     * @param f
     *   A function X => A to be applied at NA location
     */
   def fillNA(f: X => T): Series[X, T] =
     Series(VecImpl.seriesfillNA(index.toVec, values)(f), index)
+
+  /** Fill NA values by propagating defined values.
+    *
+    * @param limit
+    *   If > 0, propagate over a maximum of `limit` consecutive NA values.
+    */
+  def fillNA(method: FillMethod, limit: Int = 0): Series[X, T] =
+    Series(VecImpl.fillNA(values, method, limit), index)
+
+  /** Fill NA values by propagating defined values forward.
+    *
+    * @param limit
+    *   If > 0, propagate over a maximum of `limit` consecutive NA values.
+    */
+  def fillForward(limit: Int = 0): Series[X, T] =
+    Series(VecImpl.fillNA(values, FillForward, limit), index)
+
+  /** Fill NA values by propagating defined values backward.
+    *
+    * @param limit
+    *   If > 0, propagate over a maximum of `limit` consecutive NA values.
+    */
+  def fillBackward(limit: Int = 0): Series[X, T] =
+    Series(VecImpl.fillNA(values, FillBackward, limit), index)
 
   /** Creates a Series having the same values but excluding all key/value pairs
     * in which the value is NA.
@@ -937,8 +995,8 @@ class Series[X: ST: ORD, @spec(Int, Long, Double) T: ST](
           val fmt = "%" + l + "s"
           val res = if (i == vls.length - 1 || prevRowLabels(i) != v) {
             resetRowLabels(i + 1)
-            v.formatted(fmt)
-          } else "".formatted(fmt)
+            fmt.format(v)
+          } else fmt.format("")
           prevRowLabels(i) = v
           res
         }
