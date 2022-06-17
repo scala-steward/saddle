@@ -273,24 +273,6 @@ lazy val linalg = project
     coreJVM,
     inlinedOps
   )
-lazy val linalgScala3 = project
-  .in(file("saddle-linalg"))
-  .settings(commonSettings: _*)
-  .settings(
-    target := file("saddle-linalg/target3/"),
-    name := "saddle-linalg",
-    scalaVersion := scalaVersion3,
-    crossScalaVersions := Nil,
-    libraryDependencies ++= Seq(
-      "com.github.fommil.netlib" % "all" % "1.1.2" pomOnly (),
-      "net.sourceforge.f2j" % "arpack_combined_all" % "0.1"
-    ) ++ scalaTest,
-    versionPolicyCheck / skip := true
-
-  )
-  .dependsOn(
-    coreJVM
-  )
 
 lazy val binary = project
   .in(file("saddle-binary"))
@@ -432,7 +414,6 @@ lazy val docs = project
         spireJS,
         io.js,
         jsoniter.js,
-        linalgScala3
       )),
     publish / skip := true,
     publishArtifact := false,
@@ -459,7 +440,6 @@ lazy val root = (project in file("."))
     time,
     stats,
     linalg,
-    linalgScala3,
     binary,
     circeJS,
     circeJVM,
