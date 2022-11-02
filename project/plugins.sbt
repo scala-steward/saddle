@@ -16,4 +16,4 @@ addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.2.0")
 
 addSbtPlugin("com.typesafe" % "sbt-mima-plugin" % "1.0.1")
 
-addSbtPlugin("ch.epfl.scala" % "sbt-version-policy" % "2.0.1")
+addSbtPlugin("ch.epfl.scala" % "sbt-version-policy" % "2.1.0")
