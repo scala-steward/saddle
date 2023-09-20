@@ -87,6 +87,33 @@ object CsvParser {
       channel.close()
     }
   }
+  def parseString[@spec(Int, Double, Long, Float) T](
+      data: String,
+      cols: Seq[Int] = Nil,
+      fieldSeparator: Char = ',',
+      quoteChar: Char = '"',
+      recordSeparator: String = "\r\n",
+      maxLines: Long = Long.MaxValue,
+      charset: CharsetDecoder = makeAsciiSilentCharsetDecoder,
+      bufferSize: Int = 8192
+  )(implicit st: ST[T]): Either[String, Frame[Int, Int, T]] = {
+    val channel = ByteChannel(data, charset.charset())
+    try {
+      parseFromChannel(
+        channel = channel,
+        cols = cols,
+        fieldSeparator = fieldSeparator,
+        quoteChar = quoteChar,
+        recordSeparator = recordSeparator,
+        maxLines = maxLines,
+        header = false,
+        charset = charset,
+        bufferSize = bufferSize
+      ).map { case (frame, _) => frame }
+    } finally {
+      channel.close()
+    }
+  }
 
   def parseFileWithHeader[@spec(Int, Double, Long, Float) T](
       file: File,
@@ -100,6 +127,34 @@ object CsvParser {
   )(implicit st: ST[T]): Either[String, Frame[Int, String, T]] = {
     val is = new java.io.FileInputStream(file)
     val channel = is.getChannel
+    try {
+      parseFromChannel(
+        channel = channel,
+        cols = cols,
+        fieldSeparator = fieldSeparator,
+        quoteChar = quoteChar,
+        recordSeparator = recordSeparator,
+        maxLines = maxLines,
+        header = true,
+        charset = charset,
+        bufferSize = bufferSize
+      ).map { case (frame, colIndex) => frame.setColIndex(colIndex.get) }
+    } finally {
+      channel.close()
+    }
+  }
+  def parseStringWithHeader[@spec(Int, Double, Long, Float) T](
+      data: String,
+      cols: Seq[Int] = Nil,
+      fieldSeparator: Char = ',',
+      quoteChar: Char = '"',
+      recordSeparator: String = "\r\n",
+      maxLines: Long = Long.MaxValue,
+      charset: CharsetDecoder = makeAsciiSilentCharsetDecoder,
+      bufferSize: Int = 8192
+  )(implicit st: ST[T]): Either[String, Frame[Int, String, T]] = {
+    val channel = ByteChannel(data, charset.charset())
+
     try {
       parseFromChannel(
         channel = channel,

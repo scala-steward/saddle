@@ -18,31 +18,6 @@ import org.specs2.ScalaCheck
 import org.specs2.mutable.Specification
 import org.saddle.{Index, Vec, Frame, na, ST, Series}
 import org.saddle.order._
-import java.nio.ByteBuffer
-import java.nio.channels.ReadableByteChannel
-
-class ByteChannel(src: ByteBuffer) extends ReadableByteChannel {
-  def read(dst: ByteBuffer) = {
-    var i = 0
-    while (dst.hasRemaining() && src.hasRemaining()) {
-      dst.put(src.get)
-      i += 1
-    }
-    if (dst.hasRemaining() && i == 0) -1
-    else i
-  }
-  def isOpen(): Boolean = true
-  def close(): Unit = ()
-}
-
-object ByteChannel {
-  def apply(s: String) = {
-    val data =
-      ByteBuffer.wrap(s.getBytes("UTF-8"))
-    new ByteChannel(data)
-  }
-
-}
 
 class CsvCheck extends Specification with ScalaCheck {
   val crlf = "\r\n"
@@ -74,6 +49,25 @@ class CsvCheck extends Specification with ScalaCheck {
         .toOption
         .get
         ._1
+        .withColIndex(0)
+        .resetRowIndex
+    val expect = Frame(
+      Vec("1", "4", "5", "7"),
+      Vec("25", "55", "9", "8"),
+      Vec("36", "6", "38", "9")
+    ).setColIndex(Index("a", "b,c,d", "e")).colAt(Array(1))
+    frame must_== expect
+  }
+  "csv string parsing works cols parseString" in {
+    val data =
+      s"""a,"b,c,d",e${crlf}1,25,36${crlf}4,55,"6"${crlf}5,9,38${crlf}7,"8","9""""
+
+
+    val frame =
+      CsvParser
+        .parseString[String](data, bufferSize = 8, cols = List(1))
+        .toOption
+        .get
         .withColIndex(0)
         .resetRowIndex
     val expect = Frame(
