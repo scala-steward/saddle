@@ -6,19 +6,21 @@ weight: 1
 Add any of these lines to your build.sbt:
 ```scala
 // The core library
-libraryDependencies += "io.github.pityka" % "saddle-core" % "@VERSION@"
+libraryDependencies += "io.github.pityka" %% "saddle-core" % "@VERSION@"
 // Inlined binary operation instances for Mat and Vec
-libraryDependencies += "io.github.pityka" % "saddle-ops-inlined" % "@VERSION@"
+libraryDependencies += "io.github.pityka" %% "saddle-ops-inlined" % "@VERSION@"
 // Linear algebra interface to BLAS
-libraryDependencies += "io.github.pityka" % "saddle-linalg" % "@VERSION@"
+libraryDependencies += "io.github.pityka" %% "saddle-linalg" % "@VERSION@"
 // Binary representation of data frames and matrices
-libraryDependencies += "io.github.pityka" % "saddle-binary" % "@VERSION@"
+libraryDependencies += "io.github.pityka" %% "saddle-binary" % "@VERSION@"
 // Circe Encoder and Decoder instances
-libraryDependencies += "io.github.pityka" % "saddle-circe" % "@VERSION@"
+libraryDependencies += "io.github.pityka" %% "saddle-circe" % "@VERSION@"
+// Jsoniter-scala codec instances
+libraryDependencies += "io.github.pityka" %% "saddle-jsoniter" % "@VERSION@"
 // Interface to joda time (not maintained)
-libraryDependencies += "io.github.pityka" % "saddle-time" % "@VERSION@"
+libraryDependencies += "io.github.pityka" %% "saddle-time" % "@VERSION@"
 // Interface to EJML (not maintained)
-libraryDependencies += "io.github.pityka" % "saddle-stats" % "@VERSION@"
+libraryDependencies += "io.github.pityka" %% "saddle-stats" % "@VERSION@"
 ```
 
 ### Dependencies
