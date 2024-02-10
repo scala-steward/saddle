@@ -28,8 +28,34 @@ class JoinerImpl[@spec(Boolean, Int, Long, Double) T: ST: ORD]
   private implicit def wrapArray(arr: Array[Int]): Option[Array[Int]] =
     Some(arr)
 
-  def join(left: Index[T], right: Index[T], how: JoinType): ReIndexer[T] = {
-    if (left == right) {
+  def join(left: Index[T], right: Index[T], how: JoinType): ReIndexer[T] =
+    join(left, right, how, false)
+
+  /** Perform database joins
+    *
+    * @param left
+    *   left index to join
+    * @param right
+    *   right index to join
+    * @param how
+    *   mode of operation: inner, left outer, right outer, full outer
+    * @param forceProperSemantics
+    *   if false, then no join is happening if left == right and right is
+    *   returned This is correct for unique indexes, and also practical
+    *   otherwise. If forceProperSemantics true, then the join is done even
+    *   between identical indexes. At the moment forceProperSemantics=true is
+    *   used at no places in saddle's source code (i.e. all frame joins etc use
+    *   the shortcut to not produce proper joins of identical indexes with
+    *   repeated values)
+    * @return
+    */
+  def join(
+      left: Index[T],
+      right: Index[T],
+      how: JoinType,
+      forceProperSemantics: Boolean
+  ): ReIndexer[T] = {
+    if (left == right && !forceProperSemantics) {
       ReIndexer(None, None, right)
     } else if (left.isUnique && right.isUnique) {
       how match {

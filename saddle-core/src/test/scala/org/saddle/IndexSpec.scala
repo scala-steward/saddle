@@ -12,9 +12,9 @@ import org.saddle.index.OuterJoin
 class IndexSpec extends Specification {
   "Index methods" should {
     "contiguous works" in {
-      val ix = Index(1,1,0,0)
+      val ix = Index(1, 1, 0, 0)
       ix.isContiguous must_== true
-    } 
+    }
     "over flow in join" in {
       val ix1 = Index(array.randInt(1000000, 0, 3))
       val ix2 = Index(array.randInt(10000, 0, 3))
@@ -42,7 +42,18 @@ class IndexSpec extends Specification {
   }
   "Index Joins" should {
 
-    "Outer join of same non-unique indexes " in {
+    "Outer join of same non-unique indexes with forceProperSemantics = true makes a join " in {
+      val ix1 = Index(0, 0)
+      val ix2 = Index(0, 0)
+      val res = (new org.saddle.index.JoinerImpl[Int])
+        .join(ix1, ix2, index.OuterJoin, forceProperSemantics = true)
+
+      res.index must_== Index(0, 0, 0, 0)
+      res.lTake.get must_== Array(0, 0, 1, 1)
+      res.rTake.get must_== Array(0, 1, 0, 1)
+
+    }
+    "Outer join of same non-unique indexes with forceProperSemantics=false (the default) returns the input " in {
       val ix1 = Index(0, 0)
       val ix2 = Index(0, 0)
       val res = ix1.join(ix2, how = index.OuterJoin)
