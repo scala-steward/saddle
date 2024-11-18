@@ -424,7 +424,7 @@ lazy val docs = project
     publishArtifact := false,
     moduleName := "saddle-docs",
     mdocVariables := Map(
-      "VERSION" -> version.value
+      "VERSION" -> previousStableVersion.value.getOrElse(version.value)
     ),
     ScalaUnidoc / unidoc / target := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
     cleanFiles += (ScalaUnidoc / unidoc / target).value
