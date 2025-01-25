@@ -16,6 +16,7 @@ jobs:
         distribution: temurin
         java-version: 8
     - uses: actions/setup-node@v1
+    - uses: sbt/setup-sbt@v1
     - name: Compile 
       run: sbt -J-Xmx3000m clean +test docs/mdoc versionPolicyCheck docs/unidoc
     
