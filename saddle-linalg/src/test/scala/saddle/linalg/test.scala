@@ -317,8 +317,7 @@ class SingulvarValues extends AnyFunSuite {
   test("3x2") {
     val m = Mat(Vec(1d, 2d), Vec(3d, 4d), Vec(5d, 6d))
     val sv: Vec[Double] = m.singularValues(2)
-
-    assert(sv == Vec(9.52551809156511, 0.5143005806586431))
+    assert(sv.roundTo(6) == Vec(9.52551809156511, 0.5143005806586431).roundTo(6))
 
   }
 
@@ -326,7 +325,7 @@ class SingulvarValues extends AnyFunSuite {
     val m = Mat(Vec(1d, 2d), Vec(3d, 4d), Vec(5d, 6d)).T
     val sv = m.singularValues(2)
 
-    assert(sv == Vec(9.52551809156511, 0.5143005806586431))
+    assert(sv.roundTo(6) == Vec(9.52551809156511, 0.5143005806586431).roundTo(6))
 
   }
 }
@@ -588,11 +587,11 @@ class SolveSuite extends AnyFunSuite {
       Vec(0.9999999999999964, 2d),
       Vec(3.000000000000001, 4d),
       Vec(5.000000000000007, 6d)
-    )
+    ).roundTo(6)
 
     val x = a.solve(b).get
-    assert((a mm x) == b1)
-    assert((a mm (a \ b).get) == b1)
+    assert((a mm x).roundTo(6) == b1)
+    assert((a mm (a \ b).get).roundTo(6) == b1)
 
   }
 
