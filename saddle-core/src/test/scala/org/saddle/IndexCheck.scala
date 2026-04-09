@@ -92,6 +92,40 @@ class IndexCheck extends Specification with ScalaCheck {
       }
     }
 
+    "lsearch and rsearch works on IndexIntRange with non-zero from" in {
+      val gen = for {
+        from <- Gen.choose(1, 100)
+        length <- Gen.choose(1, 100)
+        elem <- Gen.choose(from - 5, from + length + 5)
+      } yield (from, length, elem)
+      forAll(gen) { case (from, length, elem) =>
+        val ix = index.IndexIntRange(length, from)
+        val genIdx = Index(array.range(from, from + length))
+        val cl = ix.lsearch(elem)
+        val cr = ix.rsearch(elem)
+        val clExpected = genIdx.lsearch(elem)
+        val crExpected = genIdx.rsearch(elem)
+        (cl must_== clExpected) and (cr must_== crExpected)
+      }
+    }
+
+    "lsearch and rsearch works on IndexIntRange with non-zero from" in {
+      val gen = for {
+        from <- Gen.choose(1, 100)
+        length <- Gen.choose(1, 100)
+        elem <- Gen.choose(from - 5, from + length + 5)
+      } yield (from, length, elem)
+      forAll(gen) { case (from, length, elem) =>
+        val ix = index.IndexIntRange(length, from)
+        val genIdx = Index(array.range(from, from + length))
+        val cl = ix.lsearch(elem)
+        val cr = ix.rsearch(elem)
+        val clExpected = genIdx.lsearch(elem)
+        val crExpected = genIdx.rsearch(elem)
+        (cl must_== clExpected) and (cr must_== crExpected)
+      }
+    }
+
     "lsearch and rsearch works" in {
       forAll { (ix1: Index[Int], elem: Int) =>
         val ix = ix1.sorted

@@ -91,10 +91,10 @@ class IndexIntRange(val length: Int, val from: Int = 0, val ord: ORD[Int])
     Index(util.Concat.append(toArray, x.toArray))
 
   // find the first location whereby an insertion would maintain a sorted index
-  def lsearch(t: Int) = math.min(math.max(0, from + t), from + length)
+  def lsearch(t: Int) = math.min(math.max(0, t - from), length)
 
   // find the last location whereby an insertion would maintain a sorted index
-  def rsearch(t: Int) = math.min(math.max(0, from + t + 1), from + length)
+  def rsearch(t: Int) = math.min(math.max(0, t - from + 1), length)
 
   override def distinct(implicit st: ST[Int], ord: ORD[Int]) = this
 
