@@ -45,6 +45,26 @@ class BinarySuite extends AnyFunSuite {
         .get == frame.toMat
     )
   }
+  test("double NA round-trips through null") {
+    val v = Vec(1d, Double.NaN, 3d)
+    val json = v.asJson
+    val jsonStr = json.noSpaces
+    assert(jsonStr.contains("null"), s"NA should serialize as null, got: $jsonStr")
+    val decoded = implicitly[Decoder[Vec[Double]]].decodeJson(json).toOption.get
+    assert(decoded.raw(0) == 1d)
+    assert(decoded.raw(1).isNaN)
+    assert(decoded.raw(2) == 3d)
+  }
+  test("int NA round-trips through null") {
+    val v = Vec(1, Int.MinValue, 3)
+    val json = v.asJson
+    val jsonStr = json.noSpaces
+    assert(jsonStr.contains("null"), s"NA should serialize as null, got: $jsonStr")
+    val decoded = implicitly[Decoder[Vec[Int]]].decodeJson(json).toOption.get
+    assert(decoded.raw(0) == 1)
+    assert(decoded.raw(1) == Int.MinValue)
+    assert(decoded.raw(2) == 3)
+  }
   test("2x3 string NAs (nulls)") {
     val frame = Frame(
       Mat(Vec("1", "2"), Vec(null, "4"), Vec("5", "6")),

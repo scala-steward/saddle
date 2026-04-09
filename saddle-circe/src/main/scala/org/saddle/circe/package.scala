@@ -4,8 +4,10 @@ import _root_.io.circe.{Encoder, Decoder}
 
 package object circe {
 
-  implicit def indexEncoder[T: Encoder]: Encoder[Index[T]] =
-    Encoder.encodeSeq[Option[T]].contramap(_.toSeq.map(Option(_)))
+  implicit def indexEncoder[T: Encoder: ST]: Encoder[Index[T]] = {
+    val st = implicitly[ST[T]]
+    Encoder.encodeSeq[Option[T]].contramap(_.toSeq.map(v => if (st.isMissing(v)) None else Some(v)))
+  }
   implicit def indexDecoder[T: Decoder: ST: ORD]: Decoder[Index[T]] = {
     val missing = implicitly[ST[T]].missing
     Decoder
@@ -13,28 +15,30 @@ package object circe {
       .map(v => Index(v.map(_.getOrElse(missing)): _*))
   }
 
-  implicit def vecEncoder[T: Encoder]: Encoder[Vec[T]] =
-    Encoder.encodeSeq[Option[T]].contramap(_.toSeq.map(Option(_)))
+  implicit def vecEncoder[T: Encoder: ST]: Encoder[Vec[T]] = {
+    val st = implicitly[ST[T]]
+    Encoder.encodeSeq[Option[T]].contramap(_.toSeq.map(v => if (st.isMissing(v)) None else Some(v)))
+  }
   implicit def vecDecoder[T: Decoder: ST]: Decoder[Vec[T]] = {
     val missing = implicitly[ST[T]].missing
     Decoder.decodeSeq[Option[T]].map(v => Vec(v.map(_.getOrElse(missing)): _*))
   }
 
-  implicit def matEncoder[T: Encoder]: Encoder[Mat[T]] =
+  implicit def matEncoder[T: Encoder: ST]: Encoder[Mat[T]] =
     implicitly[Encoder[(Int, Int, Vec[T])]]
       .contramap(m => (m.numRows, m.numCols, m.toVec))
   implicit def matDecoder[T: Decoder: ST]: Decoder[Mat[T]] =
     implicitly[Decoder[(Int, Int, Vec[T])]]
       .map(v => Mat(v._1, v._2, v._3.toArray))
 
-  implicit def seriesEncoder[T: Encoder, I: Encoder]: Encoder[Series[I, T]] =
+  implicit def seriesEncoder[T: Encoder: ST, I: Encoder: ST]: Encoder[Series[I, T]] =
     implicitly[Encoder[(Index[I], Vec[T])]].contramap(v => (v.index, v.values))
 
   implicit def seriesDecoder[T: Decoder: ST, I: Decoder: ST: ORD]
       : Decoder[Series[I, T]] =
     implicitly[Decoder[(Index[I], Vec[T])]].map(v => Series(v._1, v._2))
 
-  implicit def frameEncoder[T: Encoder, RX: Encoder, CX: Encoder]
+  implicit def frameEncoder[T: Encoder: ST, RX: Encoder: ST, CX: Encoder: ST]
       : Encoder[Frame[RX, CX, T]] =
     implicitly[Encoder[(Index[RX], Index[CX], Seq[Vec[T]])]]
       .contramap(v => (v.rowIx, v.colIx, v.values))
