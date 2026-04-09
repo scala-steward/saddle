@@ -17,3 +17,4 @@ project/metals.sbt
 .vscode/settings.json
 .bsp
 saddle-linalg/target3/
+.vscode/mcp.json
