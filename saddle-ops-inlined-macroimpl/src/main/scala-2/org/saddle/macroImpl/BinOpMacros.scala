@@ -201,7 +201,7 @@ object BinOpMacros {
         a || b
       }"""
       case t if t =:= weakTypeOf[XorOp] => q"""(a:$a,b:$b) => {
-        a && b || !a && !b
+        a ^ b
       }"""
       case t if t =:= weakTypeOf[GtOp] => q"""(a:$a,b:$b) => {
         val stA = $scalarTagA

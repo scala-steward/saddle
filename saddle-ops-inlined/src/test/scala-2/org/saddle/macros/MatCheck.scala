@@ -723,7 +723,7 @@ class MatCheck extends Specification with ScalaCheck {
     }
     "op xor works" in {
       forAll { (m: Mat[Boolean], b: Boolean) =>
-        (m xor b) must_== m.map(a => (a && b) || (!a && !b))
+        (m xor b) must_== m.map(a => a ^ b)
       }
     }
   }
