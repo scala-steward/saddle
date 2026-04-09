@@ -158,7 +158,7 @@ object Writer {
           bb.put(t(i).asInstanceOf[Byte])
           i += 1
         }
-        i
+        i - startOffset
       }
     case ScalarTagChar =>
       Right {
@@ -168,7 +168,7 @@ object Writer {
           bb.putChar(t(i).asInstanceOf[Char])
           i += 1
         }
-        i
+        i - startOffset
       }
     case other => Left(s"Type $other not supported.")
   }

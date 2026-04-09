@@ -106,6 +106,18 @@ class BinarySuite extends AnyFunSuite {
     val deser = Reader.readFrameFromArray[Double](binary)
     assert(deser.toOption.get == frame)
   }
+  test("byte round-trip with writeMatIntoArrays") {
+    val m = Mat(Vec(1d, 2d, 3d, 4d, 5d, 6d, 7d, 8d).map(_.toByte))
+    val binary = Writer.writeMatIntoArrays(m, 16).toOption.get
+    val deser = Reader.readMatFromArrays[Byte](binary)
+    assert(deser.toOption.get == m)
+  }
+  test("char round-trip with writeMatIntoArrays") {
+    val m = Mat(Vec(1d, 2d, 3d, 4d, 5d, 6d, 7d, 8d).map(_.toChar))
+    val binary = Writer.writeMatIntoArrays(m, 16).toOption.get
+    val deser = Reader.readMatFromArrays[Char](binary)
+    assert(deser.toOption.get == m)
+  }
   test("empty") {
     val frame = Frame.empty[String, String, Double]
     val binary = Writer.writeFrameIntoArray(frame).toOption.get
