@@ -888,7 +888,7 @@ class MatPimp(val self: Mat[Double]) {
     var i = 0
     val d = a.toArray
     while (i < b.size) {
-      b(i) = d(i * a.numRows + i)
+      b(i) = d(i * a.numCols + i)
       i += 1
     }
     Vec(b)

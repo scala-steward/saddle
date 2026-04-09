@@ -312,6 +312,22 @@ class SVDTruncated extends AnyFunSuite {
   }
 }
 
+class DiagNonSquare extends AnyFunSuite {
+
+  test("diag on non-square 2x3 matrix") {
+    val m = Mat(Vec(1d, 2d), Vec(3d, 4d), Vec(5d, 6d))
+    // m is 2x3, diag should return [m(0,0), m(1,1)] = [1, 4]
+    assert(m.diag == Vec(1d, 4d))
+  }
+
+  test("diag on non-square 3x2 matrix") {
+    val m = Mat(Vec(1d, 2d), Vec(3d, 4d), Vec(5d, 6d)).T
+    // m is 3x2: (0,0)=1, (0,1)=2, (1,0)=3, (1,1)=4, (2,0)=5, (2,1)=6
+    // diag should return [m(0,0), m(1,1)] = [1, 4]
+    assert(m.diag == Vec(1d, 4d))
+  }
+}
+
 class SingulvarValues extends AnyFunSuite {
 
   test("3x2") {
