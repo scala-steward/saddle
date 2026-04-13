@@ -1,8 +1,7 @@
 name: sonatype
 on:
   push:
-    branches: [master]
-    tags: ["*"]
+    tags: ["v*"]
 jobs:
   publish:
     runs-on: ubuntu-latest
