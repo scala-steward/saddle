@@ -7,7 +7,6 @@ lazy val scalaVersion3 = "3.3.0"
 lazy val scalaVersionInBuild = scalaVersion213
 
 ThisBuild / versionScheme := Some("early-semver")
-ThisBuild / sonatypeCredentialHost := "oss.sonatype.org"
 
 ThisBuild / libraryDependencySchemes ++= Seq(
   "io.circe" % "circe-core" % "always",
