@@ -23,7 +23,7 @@ import org.saddle._
 /** Test Mat
   */
 class BinOpMat2Check extends Specification with ScalaCheck {
-  implicit val arbMat = Arbitrary(MatArbitraries.matDouble)
+  implicit val arbMat : org.scalacheck.Arbitrary[org.saddle.Mat[Double]] = Arbitrary(MatArbitraries.matDouble)
   "scalar operation in place works" in {
     forAll { (m: Mat[Double]) =>
       import org.saddle.ops.BinOps._
