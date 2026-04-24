@@ -125,11 +125,13 @@ package object csv {
 
       if (!error && !done) {
         val (chars, from, to, len, eol) = data.emitRest
-        callback(chars, from, to, len, eol) match {
-          case Error(err) =>
-            error = true
-            errorString = err
-          case _ =>
+        if (chars != null) {
+          callback(chars, from, to, len, eol) match {
+            case Error(err) =>
+              error = true
+              errorString = err
+            case _ =>
+          }
         }
       }
 

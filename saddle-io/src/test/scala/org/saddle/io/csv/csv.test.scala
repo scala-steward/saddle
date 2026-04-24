@@ -18,6 +18,23 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class CSVSuite extends AnyFunSuite {
 
+  test("empty data") {
+    val crlf = "[]"
+    val data = ""
+
+    val src = ByteChannel(data)
+    val buffer = new BufferCallback
+    org.saddle.io.csv.parse(
+      src,
+      buffer,
+      bufferSize = 8,
+      recordSeparator = crlf
+    )
+
+    assert(buffer.toList == List())
+
+  }
+
   test("carry in quote") {
     val lf = "]"
     val data =
