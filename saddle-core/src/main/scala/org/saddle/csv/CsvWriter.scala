@@ -151,16 +151,17 @@ object CsvWriter {
     }
 
     def writeHeader(rsm: ScalarTag[RX], csm: ScalarTag[CX]) = {
-      // get depth (number of levels) of row and column indexes
-      val cDepth = csm.strList(frame.colIx.raw(0)).length
-      val rDepth = rsm.strList(frame.rowIx.raw(0)).length
-
-      // space holder according to number of row index levels
-      val lead = Seq.fill(rDepth)("")
-
+     
       // write out column index headers
       if (withColIx) {
         val colIxSeq = frame.colIx.toSeq
+        val cDepth = csm.strList(colIxSeq.head).length
+         // get depth (number of levels) of row and column indexes
+        val rDepth = if (frame.rowIx.nonEmpty) rsm.strList(frame.rowIx.raw(0)).length else 0
+
+        // space holder according to number of row index levels
+        val lead = Seq.fill(rDepth)("")
+
 
         // for each depth of the column index, write a row
         for (i <- 0 until cDepth) {
@@ -202,6 +203,10 @@ object CsvWriter {
 
       writeHeader(rsm, csm)
       writeRows(rsm)
+    } else {
+      val rsm = frame.rowIx.scalarTag
+      val csm = frame.colIx.scalarTag
+      writeHeader(rsm, csm)
     }
   }
 
